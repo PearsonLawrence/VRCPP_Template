@@ -199,7 +199,30 @@ void AHandMotionController::ClearArc()
 
 void AHandMotionController::UpdateArcSpline(bool FoundValidLocation, TArray<FVector> SplinePoints)
 {
+	if (!FoundValidLocation)
+	{
 
+		TArray<FVector> nullarray;
+		SplinePoints = nullarray;
+
+		SplinePoints.Add(ArcDirection->GetComponentLocation());
+		SplinePoints.Add(ArcDirection->GetComponentLocation() + (ArcDirection->GetForwardVector() * 20.0f));
+	}
+
+	for (int i = 0; i < SplinePoints.Num(); i++)
+	{
+		ArcSpline->AddSplinePoint(SplinePoints[i], ESplineCoordinateSpace::Local);
+	}
+	ArcSpline->SetSplinePointType(SplinePoints.Num() - 1, ESplinePointType::CurveClamped);
+
+	for (int i = 0; i < ArcSpline->GetNumberOfSplinePoints() - 2; i++)
+	{
+		USplineMeshComponent* tempMesh = CreateDefaultSubobject<USplineMeshComponent>("Mesh");
+
+		SplineMeshes.Add(tempMesh);
+		SplineMeshes[SplineMeshes.Num() - 1]->SetStartAndEnd(SplinePoints[i], ArcSpline->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Local),
+			SplinePoints[i + 1], ArcSpline->GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Local));
+	}
 }
 
 void AHandMotionController::UpdateArcEndpoint(FVector NewLocation, bool ValidLocationFound)
