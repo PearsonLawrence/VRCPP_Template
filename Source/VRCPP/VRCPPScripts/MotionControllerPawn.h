@@ -29,6 +29,10 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+private:
+
+	FTimerHandle UnusedHandle; //Used to handle timers
+
 public:	
 
 	// Called every frame
@@ -38,6 +42,13 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	///////////////////// Variables //////////////////////
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UsePreMade")
+	bool bPreMadeUpdate;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "UsePreMade")
+	bool bPreMadeBeginPlay;
+
 
 	//-------------- Object Variables --------------//
 
@@ -53,7 +64,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Controller")
 	class AHandMotionController* RightController;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Setup")
+	UPROPERTY(EditAnywhere, Category = "Setup")
 	TSubclassOf<class AHandMotionController> ControllerBlueprint;
 
 	//-------------- Fade Variables --------------//
@@ -97,6 +108,8 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Misc")
 	bool bUsePreMadeInput;
 
+	
+
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "Origin")
 	EHMDType HMDType;
 
@@ -112,26 +125,52 @@ public:
 	UFUNCTION(BlueprintCallable, DisplayName = "Setup Motion Controllers", Category = "VRCPP Setup")
 	void SetupMotionControllers();
 
+	/** Pre-built function meant to Handle VR Update through C++ (Meant to be called for default use and out of BP use)*/
+	UFUNCTION(BlueprintCallable, DisplayName = "Pre-Built Update", Category = "VRCPP PreMadeFunction")
+	void PreBuiltTick();
+
+	/**  Pre-built function meant to Handle VR BeginPlay through C++ (Meant to be called for default use and out of BP use)*/
+	UFUNCTION(BlueprintCallable, DisplayName = "Pre-Built BeginPlay", Category = "VRCPP PreMadeFunction")
+	void PreBuiltBeginPlay();
+
 	//-------------- Interaction Functions --------------//
 
-	UFUNCTION(BlueprintCallable, DisplayName = "Do Grab Left", Category = "VRCPP Interaction")
-	void DoGrabLeft();
+	UFUNCTION(BlueprintCallable, DisplayName = "Press Grab Left", Category = "VRCPP Interaction")
+	void PressGrabLeft();
 
-	UFUNCTION(BlueprintCallable, DisplayName = "Do Grab Right", Category = "VRCPP Interaction")
-	void DoGrabRight();
+	UFUNCTION(BlueprintCallable, DisplayName = "Press Grab Right", Category = "VRCPP Interaction")
+	void PressGrabRight();
+
+	UFUNCTION(BlueprintCallable, DisplayName = "Release Grab Left", Category = "VRCPP Interaction")
+	void ReleaseGrabLeft();
+
+	UFUNCTION(BlueprintCallable, DisplayName = "Release Grab Right", Category = "VRCPP Interaction")
+	void ReleaseGrabRight();
 
 	UFUNCTION(BlueprintCallable, DisplayName = "Do Grab", Category = "VRCPP Interaction")
 	void DoGrab(float Val, AHandMotionController* HandController);
 
 	//-------------- Movement Input Functions --------------//
 
-	UFUNCTION(BlueprintCallable, DisplayName = "Do Teleport Left", Category = "VRCPP Movement Input")
-	void DoTeleportLeft();
+	UFUNCTION(BlueprintCallable, DisplayName = "Press Teleport Left", Category = "VRCPP Movement Input")
+	void PressTeleportLeft();
 
-	UFUNCTION(BlueprintCallable, DisplayName = "Do Teleport Right", Category = "VRCPP Movement Input")
-	void DoTeleportRight();
+	UFUNCTION(BlueprintCallable, DisplayName = "Press Teleport Right", Category = "VRCPP Movement Input")
+	void PressTeleportRight();
+
+	UFUNCTION(BlueprintCallable, DisplayName = "Release Teleport Left", Category = "VRCPP Movement Input")
+	void ReleaseTeleportLeft();
+
+	UFUNCTION(BlueprintCallable, DisplayName = "Release Teleport Right", Category = "VRCPP Movement Input")
+	void ReleaseTeleportRight();
 
 	UFUNCTION(BlueprintCallable, DisplayName = "Do Teleport", Category = "VRCPP Movement Input")
-	void DoTeleport(float Val, AHandMotionController* HandController);
+	void DoTeleport(AHandMotionController* HandController);
+
+	//-------------- Getter Functions --------------//
+
+	UFUNCTION(BlueprintCallable, DisplayName = "Do Teleport", Category = "VRCPP Getter")
+	FRotator GetRotationFromInput(float UpAxis, float RightAxis, AHandMotionController* HandController);
+
 
 };

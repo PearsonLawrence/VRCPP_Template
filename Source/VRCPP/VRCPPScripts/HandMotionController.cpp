@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "HandMotionController.h"
+#include "MotionControllerPawn.h"
 #include "Public/MotionControllerComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
@@ -10,9 +11,12 @@
 #include "Components/ArrowComponent.h"
 #include "SteamVRChaperoneComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "AI/Navigation/NavigationSystem.h"
-
+#include "Kismet/HeadMountedDisplayFunctionLibrary.h"
+#include "Haptics/HapticFeedbackEffect_Base.h"
+#include "HandAnimInstance.h"
 // Sets default values
 AHandMotionController::AHandMotionController()
 {
@@ -24,7 +28,7 @@ AHandMotionController::AHandMotionController()
 	RootComponent = Scene;
 
 	MotionController = CreateDefaultSubobject<UMotionControllerComponent>("MotionController");
-	MotionController->AttachTo(RootComponent);
+	MotionController->AttachTo(Scene);
 
 	HandMesh = CreateDefaultSubobject<USkeletalMeshComponent>("HandMesh");
 	HandMesh->AttachTo(MotionController);
@@ -54,20 +58,118 @@ AHandMotionController::AHandMotionController()
 	RoomScaleMesh->AttachTo(Arrow);
 
 	SteamVRChaperone = CreateDefaultSubobject<USteamVRChaperoneComponent>("SteamVRChaperone");
+
+
+	bPreMadeUpdate = true;
+	bPreMadeBeginPlay = true;
+
 }
 
 // Called when the game starts or when spawned
 void AHandMotionController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!bPreMadeBeginPlay) return;
+
+	PreBuiltBeginPlay();
 }
 
 // Called every frame
 void AHandMotionController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
+
+	if (!bPreMadeUpdate) return;
+
+	PreBuiltTick();
 }
+
+void AHandMotionController::PreBuiltTick()
+{
+	UpdateRoomScaleOutline();
+
+	if (HandAnimBP) Cast<UHandAnimInstance>(HandAnimBP)->GripState = GripState;
+
+	UpdateGripState();
+	UpdateTeleportationArc();
+
+}
+
+void AHandMotionController::PreBuiltBeginPlay()
+{
+	SetupRoomScaleOutline();
+	TeleportCylinder->SetVisibility(false, true);
+	RoomScaleMesh->SetVisibility(false);
+
+	if (Hand == EControllerHand::Left) HandMesh->SetWorldScale3D(FVector(1.0f, 1.0f, -1.0f));
+
+}
+
+void AHandMotionController::UpdateGripState()
+{
+
+	//----------- Handle GripState -----------//
+
+	if (AttachedActor || bWantsToGrip)
+	{
+		GripState = EGripState::Grab;
+	}
+	else
+	{
+		AActor* TempActor = GetActorNearHand();
+
+		GripState = (TempActor) ? EGripState::CanGrab : (bWantsToGrip) ? EGripState::Grab : EGripState::Open;
+	};
+
+	if (GripState == EGripState::Grab) { HandMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); }
+	else { HandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); }
+
+	/////////////////////////////////////////////////////
+
+
+}
+
+void AHandMotionController::UpdateTeleportationArc()
+{
+
+	//----------- Handle Teleportation Arc -----------//
+	ClearArc();
+
+	if (!bIsTeleporterActive) return;
+
+	bool OutSuccess;
+	TArray<FVector> OutPoints;
+	FVector OutNavMeshLocation = FVector::ZeroVector;
+	FVector OutTraceLocation;
+
+	TraceTeleportDestination(OutSuccess, OutPoints, OutNavMeshLocation, OutTraceLocation);
+
+	TeleportCylinder->SetVisibility(bIsValidTeleportDestitination, true);
+
+
+	FHitResult hit;
+
+	GetWorld()->LineTraceSingleByObjectType(hit, OutNavMeshLocation + FVector(0, 0, -200), OutNavMeshLocation, FCollisionObjectQueryParams::AllStaticObjects);
+
+	FVector Result = UKismetMathLibrary::SelectVector(hit.ImpactPoint, OutNavMeshLocation, hit.bBlockingHit);
+
+	TeleportCylinder->SetWorldLocation(Result);
+
+
+
+	if (((bIsValidTeleportDestitination && !bLastFrameValidDestination) || (!bIsValidTeleportDestitination && bLastFrameValidDestination)) && HapticType)
+		RumbleController(HapticType, .3);
+
+	bLastFrameValidDestination = OutSuccess;
+
+	UpdateArcSpline(OutSuccess, OutPoints);
+	UpdateArcEndpoint(OutTraceLocation, OutSuccess);
+
+	/////////////////////////////////////////////////////
+
+}
+
 
 AActor* AHandMotionController::GetActorNearHand()
 {
@@ -101,7 +203,7 @@ void AHandMotionController::ReleaseActor()
 
 	if (AttachedActor->K2_GetRootComponent()->GetAttachParent() == MotionController && AttachedActor->GetClass()->ImplementsInterface(UPickupActorInterface::StaticClass()))
 	{
-		//TODO: add ruble controller function here
+		RumbleController(HapticType, .3);
 		IPickupActorInterface::Execute_Drop(AttachedActor);
 	}
 
@@ -114,14 +216,14 @@ void AHandMotionController::GrabActor()
 	AActor* TempActor = GetActorNearHand();
 
 	if (TempActor == nullptr) return;
-
+	
 	AttachedActor = TempActor;
 
 	if (AttachedActor->GetClass()->ImplementsInterface(UPickupActorInterface::StaticClass()))
 	{
 		IPickupActorInterface::Execute_Pickup(AttachedActor, MotionController);
 
-		//TODO: Add Rumble Controller
+		RumbleController(HapticType, .3);
 	}
 	else
 	{
@@ -227,20 +329,78 @@ void AHandMotionController::UpdateArcSpline(bool FoundValidLocation, TArray<FVec
 
 void AHandMotionController::UpdateArcEndpoint(FVector NewLocation, bool ValidLocationFound)
 {
+	ArcEndPoint->SetVisibility(ValidLocationFound && bIsTeleporterActive);
+	ArcEndPoint->SetWorldLocation(NewLocation);
+
+	FRotator TempRot;
+	FVector TempPosition;
+
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(TempRot, TempPosition);
+
+	Arrow->SetWorldRotation(FRotator(0, 0, TeleportRotation.Yaw + TempRot.Yaw));
+	RoomScaleMesh->SetWorldRotation(TeleportRotation);
 
 }
 
 void AHandMotionController::GetTeleportDestination(FVector& OutLocation, FRotator& OutRotation)
 {
+	FRotator TempRot;
+	FVector TempPosition;
 
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(TempRot, TempPosition);
+
+	TempPosition.Z = 0.0f;
+
+	FVector Result = TeleportRotation.RotateVector(TempPosition);
+
+	OutLocation = TeleportCylinder->GetComponentLocation() - Result;
+
+	OutRotation = TeleportRotation;
 }
 
 void AHandMotionController::SetupRoomScaleOutline()
 {
+	float ChaperoneMeshHeight = 70;
 
+	TArray<FVector> Bounds = SteamVRChaperone->GetBounds();
+	FVector OutRect;
+	FRotator OutRot;
+	float OutYSideLength, OutXSideLength;
+	UKismetMathLibrary::MinimumAreaRectangle(GetWorld(), Bounds, FVector(0, 0, 1), OutRect, OutRot,OutXSideLength,OutYSideLength);
+
+	bIsRoomScale = (OutXSideLength < 100) && (OutYSideLength < 100);
+
+	if (bIsRoomScale)
+	{
+		RoomScaleMesh->SetWorldScale3D(FVector(OutXSideLength, OutYSideLength, ChaperoneMeshHeight));
+		RoomScaleMesh->SetRelativeRotation(OutRot);
+	}
 }
 
 void AHandMotionController::UpdateRoomScaleOutline()
 {
+	if (!RoomScaleMesh->IsVisible()) return;
 
+	FRotator TempRot;
+	FVector TempPosition;
+
+	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(TempRot, TempPosition);
+
+	TempRot.Roll = 0;
+	TempRot.Pitch = 0;
+
+	TempPosition.Z = 0;
+
+	FVector Result = TempRot.UnrotateVector(TempPosition);
+
+
+	RoomScaleMesh->SetRelativeLocation(TempPosition);
+}
+
+void AHandMotionController::RumbleController(UHapticFeedbackEffect_Base* HFeedback, float Intensity)
+{
+	if (HFeedback == nullptr) return;
+
+
+	GetWorld()->GetFirstPlayerController()->PlayHapticEffect(HFeedback, Hand, Intensity);
 }
