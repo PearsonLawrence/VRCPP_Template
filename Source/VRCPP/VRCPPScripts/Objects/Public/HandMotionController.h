@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "PickupActorInterface.h"
+#include "VRCPPScripts/Interfaces/Public/PickupActorInterface.h"
 #include "HandMotionController.generated.h"
 
 UENUM(BlueprintType)		//"BlueprintType" is essential to include

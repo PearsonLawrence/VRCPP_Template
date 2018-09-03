@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "VRCPPScripts/HandMotionController.h"
+#include "VRCPPScripts/Objects/Public/HandMotionController.h"
 #include "HandAnimInstance.generated.h"
 
 /**

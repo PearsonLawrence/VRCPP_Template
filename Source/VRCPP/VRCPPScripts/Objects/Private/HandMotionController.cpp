@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "HandMotionController.h"
-#include "MotionControllerPawn.h"
+#include "VRCPP/VRCPPScripts/Objects/Public/HandMotionController.h"
+#include "VRCPP/VRCPPScripts/Objects/Public/MotionControllerPawn.h"
 #include "Public/MotionControllerComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/SplineComponent.h"
@@ -16,7 +16,7 @@
 #include "AI/Navigation/NavigationSystem.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
-#include "HandAnimInstance.h"
+#include "VRCPP/VRCPPScripts/Objects/Public/HandAnimInstance.h"
 // Sets default values
 AHandMotionController::AHandMotionController()
 {
