@@ -13,7 +13,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "AI/Navigation/NavigationSystem.h"
+#include "NavigationSystem.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
 #include "VRCPP/VRCPPScripts/Objects/Public/HandAnimInstance.h"
@@ -22,7 +22,7 @@ AHandMotionController::AHandMotionController()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	Scene = CreateDefaultSubobject<USceneComponent>("Scene");
 	Scene->AttachTo(RootComponent);
 	RootComponent = Scene;
@@ -264,25 +264,29 @@ void AHandMotionController::TraceTeleportDestination(bool& OutSuccess, TArray<FV
 	FVector Temp;
 	TArray<AActor*> NullArray;
 
-	TArray<FVector> TempTracePoints;
-
-	/*UGameplayStatics::PredictProjectilePath(GetWorld(), hit, TempTracePoints, Temp, ArcDirection->GetComponentLocation(),
+	TArray<FVector> TempTracePoints;/*
+	const TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = UEngineTypes::ConvertToObjectType(ECC_WorldStatic);
+	UGameplayStatics::PredictProjectilePath(GetWorld(), hit, TempTracePoints, Temp, ArcDirection->GetComponentLocation(),
 											ArcDirection->GetForwardVector() * TeleportLaunchVelocity, true, 0.0f, 
 											UEngineTypes::ConvertToObjectType(ECC_WorldStatic), false, 
 											NullArray,EDrawDebugTrace::None,0.0f,30.0f,2.0f,0.0f);
+
 */
 	OutTracePoints = TempTracePoints;
 	OutTraceLocation = hit.Location;
 
 	float ProjectNavExtends = 500;
+	UNavigationSystem* NavigationArea = FNavigationSystem::GetCurrent<UNavigationSystem>(GetWorld());
 
-    FVector ProjectedLocation = GetWorld()->GetNavigationSystem()->ProjectPointToNavigation(GetWorld(), hit.Location, (ANavigationData *)0, 0, FVector(ProjectNavExtends));
+	UNavigationSystemV1* NavigationSystem = Cast<UNavigationSystemV1>(GetWorld()->GetNavigationSystem());
+
+    FVector ProjectedLocation = NavigationSystem->ProjectPointToNavigation(GetWorld(), hit.Location, (ANavigationData *)0, 0, FVector(ProjectNavExtends));
 
 	FNavLocation NavLoc;
 	FVector QueryingExtent = FVector(50.0f, 50.0f, 250.0f);
 	FNavAgentProperties NavAgentProps;
 
-	bool bProjectedLocationValid = GetWorld()->GetNavigationSystem()->ProjectPointToNavigation(GetActorLocation(), NavLoc, QueryingExtent, GetWorld()->GetNavigationSystem()->MainNavData);
+	bool bProjectedLocationValid = NavigationSystem->ProjectPointToNavigation(GetActorLocation(), NavLoc, QueryingExtent, (ANavigationData*)0, 0);
 
 	OutSuccess = (hit.bBlockingHit && bProjectedLocationValid) ? true : false;
 	OutNavMeshLocation = ProjectedLocation;

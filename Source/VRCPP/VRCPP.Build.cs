@@ -8,7 +8,7 @@ public class VRCPP : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "SteamVR", "SteamVRController", "HeadMountedDisplay" }); // Made sure to include HMD library for VRCPP
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "SteamVR", "SteamVRController", "HeadMountedDisplay", "NavigationSystem" }); // Made sure to include HMD library for VRCPP
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
