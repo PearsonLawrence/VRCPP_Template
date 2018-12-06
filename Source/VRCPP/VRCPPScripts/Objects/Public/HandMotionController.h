@@ -41,41 +41,41 @@ public:
 	bool bPreMadeBeginPlay;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Owner")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Owner")
 	class AMotionControllerPawn* OwnerPawn;
 	//-------------- Object Variables --------------//
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	USceneComponent* Scene;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	class UMotionControllerComponent* MotionController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	USkeletalMeshComponent* HandMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	class UArrowComponent* ArcDirection;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	class USplineComponent* ArcSpline;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	class USphereComponent* GrabSphere;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	UStaticMeshComponent* ArcEndPoint;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	UStaticMeshComponent* TeleportCylinder;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	UStaticMeshComponent* Ring;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	UStaticMeshComponent* Arrow;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	UStaticMeshComponent* RoomScaleMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")

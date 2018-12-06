@@ -2,6 +2,8 @@
 
 #include "VRCPP/VRCPPScripts/Objects/Public/MotionControllerPawn.h"
 #include "VRCPP/VRCPPScripts/Objects/Public/HandMotionController.h"
+
+#include "Public/MotionControllerComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneComponent.h"
 #include "UObject/ConstructorHelpers.h"
@@ -13,6 +15,7 @@
 #include "Public/MotionControllerComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Classes/InputCoreTypes.h"
 // Sets default values
 AMotionControllerPawn::AMotionControllerPawn()
 {
@@ -37,6 +40,7 @@ AMotionControllerPawn::AMotionControllerPawn()
 
 	bPreMadeUpdate = true;
 	bPreMadeBeginPlay = true;
+	bUsePreMadeInput = true;
 
 }
 
@@ -151,14 +155,21 @@ void AMotionControllerPawn::SetupMotionControllers()
 
 	//Spawn new controllers and assign to pre made Left and right controller values
 	FActorSpawnParameters SpawnParams;
+
+
+
 	LeftController = GetWorld()->SpawnActor<AHandMotionController>(ControllerBlueprint);
+	LeftController->Hand = EControllerHand::Left;
+	LeftController->MotionController->SetTrackingSource(EControllerHand::Left);
 	LeftController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("LeftController"));
-	LeftController->SetActorScale3D(FVector::OneVector);
+	LeftController->HandMesh->SetWorldScale3D(FVector(1, 1, -1));
 	LeftController->OwnerPawn = this;
 
 	RightController = GetWorld()->SpawnActor<AHandMotionController>(ControllerBlueprint);
+	RightController->Hand = EControllerHand::Right;
+	RightController->MotionController->SetTrackingSource(EControllerHand::Right);
 	RightController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("RightController"));
-	RightController->SetActorScale3D(FVector::OneVector);
+	
 	RightController->OwnerPawn = this;
 
 

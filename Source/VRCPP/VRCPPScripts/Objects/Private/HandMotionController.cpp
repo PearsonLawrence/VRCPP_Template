@@ -32,27 +32,37 @@ AHandMotionController::AHandMotionController()
 
 	HandMesh = CreateDefaultSubobject<USkeletalMeshComponent>("HandMesh");
 	HandMesh->AttachTo(MotionController);
-
+	HandMesh->SetRelativeRotation(FRotator(0, 0, 90.0f));
+	HandMesh->SetRelativeLocation(FVector(-0, 0, 0));
+	
 	ArcDirection = CreateDefaultSubobject<UArrowComponent>("ArcDirection");
 	ArcDirection->AttachTo(HandMesh);
+	ArcDirection->SetRelativeLocation(FVector(14.18f, 0.86f, -4.32f));
+	
 
 	ArcSpline = CreateDefaultSubobject<USplineComponent>("ArcSpline");
 	ArcSpline->AttachTo(HandMesh);
+	ArcSpline->SetRelativeLocation(FVector(12.53f, -1.76f, 2.55f));
 
 	GrabSphere = CreateDefaultSubobject<USphereComponent>("GrabSphere");
 	GrabSphere->AttachTo(HandMesh);
+	GrabSphere->SetRelativeLocation(FVector(14.29f, 0.22f, 1.48f));
 
 	ArcEndPoint = CreateDefaultSubobject<UStaticMeshComponent>("ArcEndPoint");
 	ArcEndPoint->AttachTo(MotionController);
+	ArcEndPoint->SetRelativeScale3D(FVector(.15f));
+	ArcEndPoint->SetVisibility(false);
 
 	TeleportCylinder = CreateDefaultSubobject<UStaticMeshComponent>("TeleportCylinder");
 	TeleportCylinder->AttachTo(MotionController);
+	TeleportCylinder->SetRelativeScale3D(FVector(.75f, .75f, 1.0f));
 
 	Ring = CreateDefaultSubobject<UStaticMeshComponent>("Ring");
 	Ring->AttachTo(TeleportCylinder);
+	Ring->SetRelativeScale3D(FVector(.5f, .5f, .15f));
 
 	Arrow = CreateDefaultSubobject<UStaticMeshComponent>("Arrow");
-	Arrow->AttachTo(MotionController);
+	Arrow->AttachTo(TeleportCylinder);
 
 	RoomScaleMesh = CreateDefaultSubobject<UStaticMeshComponent>("RoomScaleMesh");
 	RoomScaleMesh->AttachTo(Arrow);
@@ -102,7 +112,7 @@ void AHandMotionController::PreBuiltBeginPlay()
 	TeleportCylinder->SetVisibility(false, true);
 	RoomScaleMesh->SetVisibility(false);
 
-	if (Hand == EControllerHand::Left) HandMesh->SetWorldScale3D(FVector(1.0f, 1.0f, -1.0f));
+	//if (Hand == EControllerHand::Left) HandMesh->SetWorldScale3D(FVector(1.0f, 1.0f, -1.0f));
 
 }
 
@@ -162,7 +172,7 @@ void AHandMotionController::UpdateTeleportationArc()
 		RumbleController(HapticType, .3);
 
 	bLastFrameValidDestination = OutSuccess;
-
+	bIsValidTeleportDestitination = bLastFrameValidDestination;
 	UpdateArcSpline(OutSuccess, OutPoints);
 	UpdateArcEndpoint(OutTraceLocation, OutSuccess);
 
@@ -258,29 +268,33 @@ void AHandMotionController::DisableTeleporter()
 //TODO: make sure function works
 void AHandMotionController::TraceTeleportDestination(bool& OutSuccess, TArray<FVector>& OutTracePoints, FVector& OutNavMeshLocation, FVector& OutTraceLocation)
 {
-	FHitResult hit;
+	TArray<FVector> TempTracePoints;
+	FVector ArcStartPos = ArcDirection->GetComponentLocation();
+	FVector ArcLaunchVelocity = ArcDirection->GetForwardVector();
 
-	
-	FVector Temp;
-	TArray<AActor*> NullArray;
+	ArcLaunchVelocity *= TeleportLaunchVelocity;
 
-	TArray<FVector> TempTracePoints;/*
-	const TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes = UEngineTypes::ConvertToObjectType(ECC_WorldStatic);
-	UGameplayStatics::PredictProjectilePath(GetWorld(), hit, TempTracePoints, Temp, ArcDirection->GetComponentLocation(),
-											ArcDirection->GetForwardVector() * TeleportLaunchVelocity, true, 0.0f, 
-											UEngineTypes::ConvertToObjectType(ECC_WorldStatic), false, 
-											NullArray,EDrawDebugTrace::None,0.0f,30.0f,2.0f,0.0f);
+	// Predict Projectile Path
 
-*/
+	FPredictProjectilePathParams PredictParams(0.0f, ArcStartPos, ArcLaunchVelocity * TeleportLaunchVelocity, 4.0f, UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
+	FPredictProjectilePathResult PredictResult;
+	const bool DidPredictPath = UGameplayStatics::PredictProjectilePath(GetWorld(), PredictParams, PredictResult);
+
+	FVector ProjectedTraceHitLocation = PredictResult.HitResult.Location;
+
+	TempTracePoints.Empty();
+	for (FPredictProjectilePathPointData Point : PredictResult.PathData)
+	TempTracePoints.Push(Point.Location);
+
 	OutTracePoints = TempTracePoints;
-	OutTraceLocation = hit.Location;
+	OutTraceLocation = ProjectedTraceHitLocation;
 
 	float ProjectNavExtends = 500;
 	UNavigationSystem* NavigationArea = FNavigationSystem::GetCurrent<UNavigationSystem>(GetWorld());
 
 	UNavigationSystemV1* NavigationSystem = Cast<UNavigationSystemV1>(GetWorld()->GetNavigationSystem());
 
-    FVector ProjectedLocation = NavigationSystem->ProjectPointToNavigation(GetWorld(), hit.Location, (ANavigationData *)0, 0, FVector(ProjectNavExtends));
+    FVector ProjectedLocation = NavigationSystem->ProjectPointToNavigation(GetWorld(), ProjectedTraceHitLocation, (ANavigationData *)0, 0, FVector(ProjectNavExtends));
 
 	FNavLocation NavLoc;
 	FVector QueryingExtent = FVector(50.0f, 50.0f, 250.0f);
@@ -288,7 +302,7 @@ void AHandMotionController::TraceTeleportDestination(bool& OutSuccess, TArray<FV
 
 	bool bProjectedLocationValid = NavigationSystem->ProjectPointToNavigation(GetActorLocation(), NavLoc, QueryingExtent, (ANavigationData*)0, 0);
 
-	OutSuccess = (hit.bBlockingHit && bProjectedLocationValid) ? true : false;
+	OutSuccess = (PredictResult.HitResult.bBlockingHit && bProjectedLocationValid) ? true : false;
 	OutNavMeshLocation = ProjectedLocation;
 }
 
