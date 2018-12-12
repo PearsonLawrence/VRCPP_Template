@@ -6,6 +6,7 @@
 #include "Public/MotionControllerComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "Engine/EngineTypes.h"
@@ -25,6 +26,7 @@ AMotionControllerPawn::AMotionControllerPawn()
 	VROrigin = CreateDefaultSubobject<USceneComponent>(FName("VROrigin"));
 	VROrigin->AttachTo(RootComponent);
 	RootComponent = VROrigin;
+
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
 	Camera->AttachTo(VROrigin);
@@ -83,6 +85,8 @@ void AMotionControllerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInp
 	PlayerInputComponent->BindAction("GrabRight", IE_Pressed, RightController, &AHandMotionController::ReleaseActor);
 */
 	////////////////////////////////////////////////////////
+	PlayerInputComponent->BindAxis("MovementYAxis", this, &AMotionControllerPawn::DoMovementYAxis);
+	PlayerInputComponent->BindAxis("MovementXAxis", this, &AMotionControllerPawn::DoMovementXAxis);
 
 
 	PlayerInputComponent->BindAction("TeleportLeft", IE_Pressed, this, &AMotionControllerPawn::PressTeleportLeft);
@@ -241,6 +245,22 @@ void AMotionControllerPawn::ReleaseTeleportRight()
 	if (RightController->bIsTeleporterActive) DoTeleport(RightController);
 
 }
+
+void AMotionControllerPawn::DoMovementYAxis(float Val)
+{
+	FVector CameraForward = Camera->GetForwardVector();
+	FVector Dir = FVector(CameraForward.X, CameraForward.Y, 0) * -Val;
+	AddMovementInput(Dir);
+}
+
+void AMotionControllerPawn::DoMovementXAxis(float Val)
+{
+
+	FVector CameraRight = Camera->GetRightVector();
+	FVector Dir = FVector(CameraRight.X, CameraRight.Y, 0) * Val;
+	AddMovementInput(Dir);
+}
+
 
 void AMotionControllerPawn::DoTeleport(AHandMotionController* HandController)
 {

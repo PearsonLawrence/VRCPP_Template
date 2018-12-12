@@ -58,6 +58,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BasePawn")
 	class UCameraComponent* Camera;
 
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Controller")
 	class AHandMotionController* LeftController;
 	
@@ -153,8 +154,15 @@ public:
 	//-------------- Movement Input Functions --------------//
 
 	UFUNCTION(BlueprintCallable, DisplayName = "Press Teleport Left", Category = "VRCPP Movement Input")
+	void DoMovementYAxis(float Val);
+
+	UFUNCTION(BlueprintCallable, DisplayName = "Press Teleport Left", Category = "VRCPP Movement Input")
+	void DoMovementXAxis(float Val);
+
+	UFUNCTION(BlueprintCallable, DisplayName = "Press Teleport Left", Category = "VRCPP Movement Input")
 	void PressTeleportLeft();
 
+	
 	UFUNCTION(BlueprintCallable, DisplayName = "Press Teleport Right", Category = "VRCPP Movement Input")
 	void PressTeleportRight();
 
