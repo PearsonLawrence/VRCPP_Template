@@ -6,7 +6,14 @@
 #include "Public/MotionControllerComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
+#include "Components/SplineComponent.h"
+#include "Components/SplineMeshComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Components/ArrowComponent.h"
+#include "SteamVRChaperoneComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "Engine/EngineTypes.h"
@@ -23,14 +30,69 @@ AMotionControllerPawn::AMotionControllerPawn()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	VROrigin = CreateDefaultSubobject<USceneComponent>(FName("VROrigin"));
-	VROrigin->AttachTo(RootComponent);
-	RootComponent = VROrigin;
+	//VROrigin = CreateDefaultSubobject<USceneComponent>(FName("VROrigin"));
+	//VROrigin->AttachTo(RootComponent);
 
+	//RootComponent = VROrigin;
+
+	VRBody = CreateDefaultSubobject<UStaticMeshComponent>(FName("VRBody"));
+	VRBody->SetupAttachment(RootComponent);
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
-	Camera->AttachTo(VROrigin);
+	Camera->SetupAttachment(RootComponent);
 	Camera->bUsePawnControlRotation = false;
+
+	LeftController = CreateDefaultSubobject<UHandMotionController>(FName("LeftController"));
+	LeftController->SetTrackingSource(EControllerHand::Left);
+
+	RightController = CreateDefaultSubobject<UHandMotionController>(FName("RightController"));
+	RightController->SetTrackingSource(EControllerHand::Right);
+
+	LeftController->SetupAttachment(RootComponent);
+	LeftController->Hand = EControllerHand::Left;
+	LeftController->SetWorldScale3D(FVector(1, 1, -1));
+	LeftController->OwnerPawn = this;
+
+	RightController->SetupAttachment(RootComponent);
+	RightController->Hand = EControllerHand::Right;
+	RightController->OwnerPawn = this;
+
+
+
+	ArcDirection = CreateDefaultSubobject<UArrowComponent>("ArcDirection");
+	ArcDirection->SetupAttachment(RootComponent);
+	ArcDirection->SetRelativeLocation(FVector(14.18f, 0.86f, -4.32f));
+
+
+	ArcSpline = CreateDefaultSubobject<USplineComponent>("ArcSpline");
+	ArcSpline->SetupAttachment(RootComponent);
+	ArcSpline->SetRelativeLocation(FVector(12.53f, -1.76f, 2.55f));
+
+	/*GrabSphere = CreateDefaultSubobject<USphereComponent>("GrabSphere");
+	GrabSphere->SetupAttachment(RootComponent);
+	GrabSphere->SetRelativeLocation(FVector(14.29f, 0.22f, 1.48f));
+*/
+	ArcEndPoint = CreateDefaultSubobject<UStaticMeshComponent>("ArcEndPoint");
+	ArcEndPoint->SetupAttachment(RootComponent);
+	ArcEndPoint->SetRelativeScale3D(FVector(.15f));
+	ArcEndPoint->SetVisibility(false);
+
+	TeleportCylinder = CreateDefaultSubobject<UStaticMeshComponent>("TeleportCylinder");
+	TeleportCylinder->SetupAttachment(RootComponent);
+	TeleportCylinder->SetRelativeScale3D(FVector(.75f, .75f, 1.0f));
+
+	Ring = CreateDefaultSubobject<UStaticMeshComponent>("Ring");
+	Ring->SetupAttachment(TeleportCylinder);
+	Ring->SetRelativeScale3D(FVector(.5f, .5f, .15f));
+
+	TeleportArrow = CreateDefaultSubobject<UStaticMeshComponent>("TeleportArrow");
+	TeleportArrow->SetupAttachment(TeleportCylinder);
+
+	RoomScaleMesh = CreateDefaultSubobject<UStaticMeshComponent>("RoomScaleMesh");
+	RoomScaleMesh->SetupAttachment(TeleportArrow);
+
+	SteamVRChaperone = CreateDefaultSubobject<USteamVRChaperoneComponent>("SteamVRChaperone");
+
 
 	FadeOutDuration = 0.1f;
 	FadeInDuration = 0.2f;
@@ -79,10 +141,10 @@ void AMotionControllerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 	//Could use if there is no need for pre built functions(Same goes with teleport)//
 /*
-	PlayerInputComponent->BindAction("GrabLeft", IE_Pressed, LeftController, &AHandMotionController::GrabActor);
-	PlayerInputComponent->BindAction("GrabLeft", IE_Pressed, LeftController, &AHandMotionController::ReleaseActor);
-	PlayerInputComponent->BindAction("GrabRight", IE_Pressed, RightController, &AHandMotionController::GrabActor);
-	PlayerInputComponent->BindAction("GrabRight", IE_Pressed, RightController, &AHandMotionController::ReleaseActor);
+	PlayerInputComponent->BindAction("GrabLeft", IE_Pressed, LeftController, &UHandMotionController::GrabActor);
+	PlayerInputComponent->BindAction("GrabLeft", IE_Pressed, LeftController, &UHandMotionController::ReleaseActor);
+	PlayerInputComponent->BindAction("GrabRight", IE_Pressed, RightController, &UHandMotionController::GrabActor);
+	PlayerInputComponent->BindAction("GrabRight", IE_Pressed, RightController, &UHandMotionController::ReleaseActor);
 */
 	////////////////////////////////////////////////////////
 	PlayerInputComponent->BindAxis("MovementYAxis", this, &AMotionControllerPawn::DoMovementYAxis);
@@ -162,19 +224,19 @@ void AMotionControllerPawn::SetupMotionControllers()
 
 
 
-	LeftController = GetWorld()->SpawnActor<AHandMotionController>(ControllerBlueprint);
-	LeftController->Hand = EControllerHand::Left;
-	LeftController->MotionController->SetTrackingSource(EControllerHand::Left);
-	LeftController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("LeftController"));
-	LeftController->HandMesh->SetWorldScale3D(FVector(1, 1, -1));
-	LeftController->OwnerPawn = this;
+	//LeftController = GetWorld()->SpawnActor<UHandMotionController>(ControllerBlueprint);
+	//LeftController->Hand = EControllerHand::Left;
+	//LeftController->SetTrackingSource(EControllerHand::Left);
+	//LeftController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("LeftController"));
+	//LeftController->SetWorldScale3D(FVector(1, 1, -1));
+	//LeftController->OwnerPawn = this;
 
-	RightController = GetWorld()->SpawnActor<AHandMotionController>(ControllerBlueprint);
-	RightController->Hand = EControllerHand::Right;
-	RightController->MotionController->SetTrackingSource(EControllerHand::Right);
-	RightController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("RightController"));
-	
-	RightController->OwnerPawn = this;
+	//RightController = GetWorld()->SpawnActor<UHandMotionController>(ControllerBlueprint);
+	//RightController->Hand = EControllerHand::Right;
+	//RightController->SetTrackingSource(EControllerHand::Right);
+	//RightController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("RightController"));
+	//
+	//RightController->OwnerPawn = this;
 
 
 }
@@ -210,7 +272,7 @@ void AMotionControllerPawn::ReleaseGrabRight()
 
 
 // NotUsed
-void AMotionControllerPawn::DoGrab(float Val, AHandMotionController* HandController)
+void AMotionControllerPawn::DoGrab(float Val, UHandMotionController* HandController)
 {
 
 }
@@ -262,7 +324,7 @@ void AMotionControllerPawn::DoMovementXAxis(float Val)
 }
 
 
-void AMotionControllerPawn::DoTeleport(AHandMotionController* HandController)
+void AMotionControllerPawn::DoTeleport(UHandMotionController* HandController)
 {
 	if (bIsTeleporting) return;
 
@@ -279,7 +341,7 @@ void AMotionControllerPawn::DoTeleport(AHandMotionController* HandController)
 		 Manager->StartCameraFade(0, 1, FadeOutDuration, TeleportFadeColor, false, true);
 
 		//Error is expected but will still build
-		GetWorldTimerManager().SetTimer(UnusedHandle, HandController, &AHandMotionController::DisableTeleporter, FadeOutDuration, true);
+		GetWorldTimerManager().SetTimer(UnusedHandle, HandController, &UHandMotionController::DisableTeleporter, FadeOutDuration, true);
 
 		FVector TPLocation;
 		FRotator TPRotation;
@@ -314,12 +376,12 @@ void AMotionControllerPawn::DoTeleport(AHandMotionController* HandController)
 	}
 }
 
-FRotator AMotionControllerPawn::GetRotationFromInput(float UpAxis, float RightAxis, AHandMotionController* HandController)
+FRotator AMotionControllerPawn::GetRotationFromInput(float UpAxis, float RightAxis, UHandMotionController* HandController)
 {
 	FTransform WristOrientation;
 	WristOrientation.SetRotation(HandController->InitialControllerRotation.Quaternion());
 
-	FTransform Result = UKismetMathLibrary::ConvertTransformToRelative(WristOrientation, HandController->MotionController->GetComponentTransform());
+	FTransform Result = UKismetMathLibrary::ConvertTransformToRelative(WristOrientation, HandController->GetComponentTransform());
 
 	FRotator NewHandRot = Result.Rotator();
 	NewHandRot.Roll *= 3;

@@ -18,84 +18,59 @@
 #include "Haptics/HapticFeedbackEffect_Base.h"
 #include "VRCPP/VRCPPScripts/Objects/Public/HandAnimInstance.h"
 // Sets default values
-AHandMotionController::AHandMotionController()
+UHandMotionController::UHandMotionController()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
 	
-	Scene = CreateDefaultSubobject<USceneComponent>("Scene");
-	Scene->AttachTo(RootComponent);
-	RootComponent = Scene;
-
-	MotionController = CreateDefaultSubobject<UMotionControllerComponent>("MotionController");
-	MotionController->AttachTo(Scene);
-
+/*
 	HandMesh = CreateDefaultSubobject<USkeletalMeshComponent>("HandMesh");
-	HandMesh->AttachTo(MotionController);
+	
 	HandMesh->SetRelativeRotation(FRotator(0, 0, 90.0f));
 	HandMesh->SetRelativeLocation(FVector(-0, 0, 0));
-	
+	*//*
 	ArcDirection = CreateDefaultSubobject<UArrowComponent>("ArcDirection");
-	ArcDirection->AttachTo(HandMesh);
+	ArcDirection->SetupAttachment(this);
 	ArcDirection->SetRelativeLocation(FVector(14.18f, 0.86f, -4.32f));
 	
 
 	ArcSpline = CreateDefaultSubobject<USplineComponent>("ArcSpline");
-	ArcSpline->AttachTo(HandMesh);
+	ArcSpline->SetupAttachment(this);
 	ArcSpline->SetRelativeLocation(FVector(12.53f, -1.76f, 2.55f));
 
 	GrabSphere = CreateDefaultSubobject<USphereComponent>("GrabSphere");
-	GrabSphere->AttachTo(HandMesh);
+	GrabSphere->SetupAttachment(this);
 	GrabSphere->SetRelativeLocation(FVector(14.29f, 0.22f, 1.48f));
 
 	ArcEndPoint = CreateDefaultSubobject<UStaticMeshComponent>("ArcEndPoint");
-	ArcEndPoint->AttachTo(MotionController);
+	ArcEndPoint->SetupAttachment(this);
 	ArcEndPoint->SetRelativeScale3D(FVector(.15f));
 	ArcEndPoint->SetVisibility(false);
 
 	TeleportCylinder = CreateDefaultSubobject<UStaticMeshComponent>("TeleportCylinder");
-	TeleportCylinder->AttachTo(MotionController);
+	TeleportCylinder->SetupAttachment(this);
 	TeleportCylinder->SetRelativeScale3D(FVector(.75f, .75f, 1.0f));
 
 	Ring = CreateDefaultSubobject<UStaticMeshComponent>("Ring");
-	Ring->AttachTo(TeleportCylinder);
+	Ring->SetupAttachment(TeleportCylinder);
 	Ring->SetRelativeScale3D(FVector(.5f, .5f, .15f));
 
 	Arrow = CreateDefaultSubobject<UStaticMeshComponent>("Arrow");
-	Arrow->AttachTo(TeleportCylinder);
+	Arrow->SetupAttachment(TeleportCylinder);
 
 	RoomScaleMesh = CreateDefaultSubobject<UStaticMeshComponent>("RoomScaleMesh");
-	RoomScaleMesh->AttachTo(Arrow);
+	RoomScaleMesh->SetupAttachment(Arrow);
 
 	SteamVRChaperone = CreateDefaultSubobject<USteamVRChaperoneComponent>("SteamVRChaperone");
-
+*/
 
 	bPreMadeUpdate = true;
 	bPreMadeBeginPlay = true;
 
 }
 
-// Called when the game starts or when spawned
-void AHandMotionController::BeginPlay()
-{
-	Super::BeginPlay();
 
-	if (!bPreMadeBeginPlay) return;
 
-	PreBuiltBeginPlay();
-}
-
-// Called every frame
-void AHandMotionController::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	if (!bPreMadeUpdate) return;
-
-	PreBuiltTick();
-}
-
-void AHandMotionController::PreBuiltTick()
+void UHandMotionController::PreBuiltTick()
 {
 	UpdateRoomScaleOutline();
 
@@ -106,17 +81,17 @@ void AHandMotionController::PreBuiltTick()
 
 }
 
-void AHandMotionController::PreBuiltBeginPlay()
+void UHandMotionController::PreBuiltBeginPlay()
 {
 	SetupRoomScaleOutline();
-	TeleportCylinder->SetVisibility(false, true);
-	RoomScaleMesh->SetVisibility(false);
+	OwnerPawn->TeleportCylinder->SetVisibility(false, true);
+	OwnerPawn->RoomScaleMesh->SetVisibility(false);
 
 	//if (Hand == EControllerHand::Left) HandMesh->SetWorldScale3D(FVector(1.0f, 1.0f, -1.0f));
 
 }
 
-void AHandMotionController::UpdateGripState()
+void UHandMotionController::UpdateGripState()
 {
 
 	//----------- Handle GripState -----------//
@@ -132,15 +107,15 @@ void AHandMotionController::UpdateGripState()
 		GripState = (TempActor) ? EGripState::CanGrab : (bWantsToGrip) ? EGripState::Grab : EGripState::Open;
 	};
 
-	if (GripState == EGripState::Grab) { HandMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); }
-	else { HandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); }
+//	if (GripState == EGripState::Grab) { OwnerPawn->HandMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); }
+	//else { OwnerPawn->HandMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); }
 
 	/////////////////////////////////////////////////////
 
 
 }
 
-void AHandMotionController::UpdateTeleportationArc()
+void UHandMotionController::UpdateTeleportationArc()
 {
 
 	//----------- Handle Teleportation Arc -----------//
@@ -155,7 +130,7 @@ void AHandMotionController::UpdateTeleportationArc()
 
 	TraceTeleportDestination(OutSuccess, OutPoints, OutNavMeshLocation, OutTraceLocation);
 
-	TeleportCylinder->SetVisibility(bIsValidTeleportDestitination, true);
+	OwnerPawn->TeleportCylinder->SetVisibility(bIsValidTeleportDestitination, true);
 
 
 	FHitResult hit;
@@ -164,7 +139,7 @@ void AHandMotionController::UpdateTeleportationArc()
 
 	FVector Result = UKismetMathLibrary::SelectVector(hit.ImpactPoint, OutNavMeshLocation, hit.bBlockingHit);
 
-	TeleportCylinder->SetWorldLocation(Result);
+	OwnerPawn->TeleportCylinder->SetWorldLocation(Result);
 
 
 
@@ -181,19 +156,24 @@ void AHandMotionController::UpdateTeleportationArc()
 }
 
 
-AActor* AHandMotionController::GetActorNearHand()
+AActor* UHandMotionController::GetActorNearHand()
 {
 	AActor* NearestOverlappingActor = nullptr;
 	float NearestOverlapDistance = 10000.0f;
 
 	TArray<AActor*> OverlappingActors;
-	GrabSphere->GetOverlappingActors(OverlappingActors);
+	TArray<FHitResult> Results;
+	FCollisionShape sphere;
+	sphere.SetSphere(20);
+	GetWorld()->SweepMultiByChannel(Results, GetComponentLocation(), GetComponentLocation(), FQuat::Identity, ECollisionChannel::ECC_EngineTraceChannel1, sphere);
 
-	for(int i = 0; i < OverlappingActors.Num(); i++)
+	//OwnerPawn->GrabSphere->GetOverlappingActors(OverlappingActors);
+
+	for(int i = 0; i < Results.Num(); i++)
 	{
-		bool bDoesUseGrab = UKismetSystemLibrary::DoesImplementInterface(OverlappingActors[i], UPickupActorInterface::StaticClass());
+		bool bDoesUseGrab = UKismetSystemLibrary::DoesImplementInterface(Results[i].GetActor(), UPickupActorInterface::StaticClass());
 		
-		float DistanceBetweenActors = FVector(OverlappingActors[i]->GetActorLocation() - GrabSphere->GetComponentLocation()).Size();
+		float DistanceBetweenActors = FVector(Results[i].GetActor()->GetActorLocation() - GetComponentLocation()).Size();
 
 		if (bDoesUseGrab && DistanceBetweenActors < NearestOverlapDistance)
 		{
@@ -205,13 +185,13 @@ AActor* AHandMotionController::GetActorNearHand()
 	return NearestOverlappingActor;
 }
 
-void AHandMotionController::ReleaseActor()
+void UHandMotionController::ReleaseActor()
 {
 	bWantsToGrip = false;
 
 	if (AttachedActor == nullptr) return;
 
-	if (AttachedActor->K2_GetRootComponent()->GetAttachParent() == MotionController && AttachedActor->GetClass()->ImplementsInterface(UPickupActorInterface::StaticClass()))
+	if (AttachedActor->K2_GetRootComponent()->GetAttachParent() == this && AttachedActor->GetClass()->ImplementsInterface(UPickupActorInterface::StaticClass()))
 	{
 		RumbleController(HapticType, .3);
 		IPickupActorInterface::Execute_Drop(AttachedActor);
@@ -220,7 +200,7 @@ void AHandMotionController::ReleaseActor()
 	AttachedActor = nullptr;
 }
 
-void AHandMotionController::GrabActor()
+void UHandMotionController::GrabActor()
 {
 	bWantsToGrip = true;
 	AActor* TempActor = GetActorNearHand();
@@ -231,7 +211,7 @@ void AHandMotionController::GrabActor()
 
 	if (AttachedActor->GetClass()->ImplementsInterface(UPickupActorInterface::StaticClass()))
 	{
-		IPickupActorInterface::Execute_Pickup(AttachedActor, MotionController);
+		IPickupActorInterface::Execute_Pickup(AttachedActor, this);
 
 		RumbleController(HapticType, .3);
 	}
@@ -241,36 +221,36 @@ void AHandMotionController::GrabActor()
 	}
 }
 
-void AHandMotionController::ActivateTeleporter()
+void UHandMotionController::ActivateTeleporter()
 {
 	bIsTeleporterActive = true;
-	TeleportCylinder->SetVisibility(true, true);
+	OwnerPawn->TeleportCylinder->SetVisibility(true, true);
 
-	RoomScaleMesh->SetVisibility(bIsRoomScale);
+	OwnerPawn->RoomScaleMesh->SetVisibility(bIsRoomScale);
 
-	InitialControllerRotation = MotionController->GetComponentRotation();
+	InitialControllerRotation = GetComponentRotation();
 	
 }
 
 
-void AHandMotionController::DisableTeleporter()
+void UHandMotionController::DisableTeleporter()
 {
 	if (!bIsTeleporterActive) return;
 
 	bIsTeleporterActive = false;
 
-	TeleportCylinder->SetVisibility(false, true);
-	ArcEndPoint->SetVisibility(false);
-	RoomScaleMesh->SetVisibility(false);
+	OwnerPawn->TeleportCylinder->SetVisibility(false, true);
+	OwnerPawn->ArcEndPoint->SetVisibility(false);
+	OwnerPawn->RoomScaleMesh->SetVisibility(false);
 
 }
 
 //TODO: make sure function works
-void AHandMotionController::TraceTeleportDestination(bool& OutSuccess, TArray<FVector>& OutTracePoints, FVector& OutNavMeshLocation, FVector& OutTraceLocation)
+void UHandMotionController::TraceTeleportDestination(bool& OutSuccess, TArray<FVector>& OutTracePoints, FVector& OutNavMeshLocation, FVector& OutTraceLocation)
 {
 	TArray<FVector> TempTracePoints;
-	FVector ArcStartPos = ArcDirection->GetComponentLocation();
-	FVector ArcLaunchVelocity = ArcDirection->GetForwardVector();
+	FVector ArcStartPos = OwnerPawn->ArcDirection->GetComponentLocation();
+	FVector ArcLaunchVelocity = OwnerPawn->ArcDirection->GetForwardVector();
 
 	ArcLaunchVelocity *= TeleportLaunchVelocity;
 
@@ -300,13 +280,13 @@ void AHandMotionController::TraceTeleportDestination(bool& OutSuccess, TArray<FV
 	FVector QueryingExtent = FVector(50.0f, 50.0f, 250.0f);
 	FNavAgentProperties NavAgentProps;
 
-	bool bProjectedLocationValid = NavigationSystem->ProjectPointToNavigation(GetActorLocation(), NavLoc, QueryingExtent, (ANavigationData*)0, 0);
+	bool bProjectedLocationValid = NavigationSystem->ProjectPointToNavigation(GetComponentLocation(), NavLoc, QueryingExtent, (ANavigationData*)0, 0);
 
 	OutSuccess = (PredictResult.HitResult.bBlockingHit && bProjectedLocationValid) ? true : false;
 	OutNavMeshLocation = ProjectedLocation;
 }
 
-void AHandMotionController::ClearArc()
+void UHandMotionController::ClearArc()
 {
 	for (int i = 0; i < SplineMeshes.Num(); i++)
 	{
@@ -314,10 +294,10 @@ void AHandMotionController::ClearArc()
 		SplineMeshes.RemoveAt(i);
 	}
 
-	ArcSpline->ClearSplinePoints();
+	OwnerPawn->ArcSpline->ClearSplinePoints();
 }
 
-void AHandMotionController::UpdateArcSpline(bool FoundValidLocation, TArray<FVector> SplinePoints)
+void UHandMotionController::UpdateArcSpline(bool FoundValidLocation, TArray<FVector> SplinePoints)
 {
 	if (!FoundValidLocation)
 	{
@@ -325,42 +305,42 @@ void AHandMotionController::UpdateArcSpline(bool FoundValidLocation, TArray<FVec
 		TArray<FVector> nullarray;
 		SplinePoints = nullarray;
 
-		SplinePoints.Add(ArcDirection->GetComponentLocation());
-		SplinePoints.Add(ArcDirection->GetComponentLocation() + (ArcDirection->GetForwardVector() * 20.0f));
+		SplinePoints.Add(OwnerPawn->ArcDirection->GetComponentLocation());
+		SplinePoints.Add(OwnerPawn->ArcDirection->GetComponentLocation() + (OwnerPawn->ArcDirection->GetForwardVector() * 20.0f));
 	}
 
 	for (int i = 0; i < SplinePoints.Num(); i++)
 	{
-		ArcSpline->AddSplinePoint(SplinePoints[i], ESplineCoordinateSpace::Local);
+		OwnerPawn->ArcSpline->AddSplinePoint(SplinePoints[i], ESplineCoordinateSpace::Local);
 	}
-	ArcSpline->SetSplinePointType(SplinePoints.Num() - 1, ESplinePointType::CurveClamped);
+	OwnerPawn->ArcSpline->SetSplinePointType(SplinePoints.Num() - 1, ESplinePointType::CurveClamped);
 
-	for (int i = 0; i < ArcSpline->GetNumberOfSplinePoints() - 2; i++)
+	for (int i = 0; i < OwnerPawn->ArcSpline->GetNumberOfSplinePoints() - 2; i++)
 	{
 		USplineMeshComponent* tempMesh = CreateDefaultSubobject<USplineMeshComponent>("Mesh");
 
 		SplineMeshes.Add(tempMesh);
-		SplineMeshes[SplineMeshes.Num() - 1]->SetStartAndEnd(SplinePoints[i], ArcSpline->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Local),
-			SplinePoints[i + 1], ArcSpline->GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Local));
+		SplineMeshes[SplineMeshes.Num() - 1]->SetStartAndEnd(SplinePoints[i], OwnerPawn->ArcSpline->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Local),
+			SplinePoints[i + 1], OwnerPawn->ArcSpline->GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Local));
 	}
 }
 
-void AHandMotionController::UpdateArcEndpoint(FVector NewLocation, bool ValidLocationFound)
+void UHandMotionController::UpdateArcEndpoint(FVector NewLocation, bool ValidLocationFound)
 {
-	ArcEndPoint->SetVisibility(ValidLocationFound && bIsTeleporterActive);
-	ArcEndPoint->SetWorldLocation(NewLocation);
+	OwnerPawn->ArcEndPoint->SetVisibility(ValidLocationFound && bIsTeleporterActive);
+	OwnerPawn->ArcEndPoint->SetWorldLocation(NewLocation);
 
 	FRotator TempRot;
 	FVector TempPosition;
 
 	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(TempRot, TempPosition);
 
-	Arrow->SetWorldRotation(FRotator(0, 0, TeleportRotation.Yaw + TempRot.Yaw));
-	RoomScaleMesh->SetWorldRotation(TeleportRotation);
+	OwnerPawn->TeleportArrow->SetWorldRotation(FRotator(0, 0, TeleportRotation.Yaw + TempRot.Yaw));
+	OwnerPawn->RoomScaleMesh->SetWorldRotation(TeleportRotation);
 
 }
 
-void AHandMotionController::GetTeleportDestination(FVector& OutLocation, FRotator& OutRotation)
+void UHandMotionController::GetTeleportDestination(FVector& OutLocation, FRotator& OutRotation)
 {
 	FRotator TempRot;
 	FVector TempPosition;
@@ -371,16 +351,16 @@ void AHandMotionController::GetTeleportDestination(FVector& OutLocation, FRotato
 
 	FVector Result = TeleportRotation.RotateVector(TempPosition);
 
-	OutLocation = TeleportCylinder->GetComponentLocation() - Result;
+	OutLocation = OwnerPawn->TeleportCylinder->GetComponentLocation() - Result;
 
 	OutRotation = TeleportRotation;
 }
 
-void AHandMotionController::SetupRoomScaleOutline()
+void UHandMotionController::SetupRoomScaleOutline()
 {
 	float ChaperoneMeshHeight = 70;
 
-	TArray<FVector> Bounds = SteamVRChaperone->GetBounds();
+	TArray<FVector> Bounds = OwnerPawn->SteamVRChaperone->GetBounds();
 	FVector OutRect;
 	FRotator OutRot;
 	float OutYSideLength, OutXSideLength;
@@ -390,14 +370,14 @@ void AHandMotionController::SetupRoomScaleOutline()
 
 	if (bIsRoomScale)
 	{
-		RoomScaleMesh->SetWorldScale3D(FVector(OutXSideLength, OutYSideLength, ChaperoneMeshHeight));
-		RoomScaleMesh->SetRelativeRotation(OutRot);
+		OwnerPawn->RoomScaleMesh->SetWorldScale3D(FVector(OutXSideLength, OutYSideLength, ChaperoneMeshHeight));
+		OwnerPawn->RoomScaleMesh->SetRelativeRotation(OutRot);
 	}
 }
 
-void AHandMotionController::UpdateRoomScaleOutline()
+void UHandMotionController::UpdateRoomScaleOutline()
 {
-	if (!RoomScaleMesh->IsVisible()) return;
+	if (!OwnerPawn->RoomScaleMesh->IsVisible()) return;
 
 	FRotator TempRot;
 	FVector TempPosition;
@@ -412,10 +392,10 @@ void AHandMotionController::UpdateRoomScaleOutline()
 	FVector Result = TempRot.UnrotateVector(TempPosition);
 
 
-	RoomScaleMesh->SetRelativeLocation(TempPosition);
+	OwnerPawn->RoomScaleMesh->SetRelativeLocation(TempPosition);
 }
 
-void AHandMotionController::RumbleController(UHapticFeedbackEffect_Base* HFeedback, float Intensity)
+void UHandMotionController::RumbleController(UHapticFeedbackEffect_Base* HFeedback, float Intensity)
 {
 	if (HFeedback == nullptr) return;
 

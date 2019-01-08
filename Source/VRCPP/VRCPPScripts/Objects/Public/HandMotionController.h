@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "MotionControllerComponent.h"
 #include "VRCPPScripts/Interfaces/Public/PickupActorInterface.h"
 #include "HandMotionController.generated.h"
 
@@ -16,21 +16,21 @@ enum class EGripState : uint8
 };
 
 UCLASS()
-class VRCPP_API AHandMotionController : public AActor, public IPickupActorInterface
+class VRCPP_API UHandMotionController : public UMotionControllerComponent, public IPickupActorInterface
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	AHandMotionController();
+	UHandMotionController();
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	//virtual void BeginPlay() override;
 
 public:	
 	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	//virtual void Tick(float DeltaTime) override;
 
 	///////////////////// Variables //////////////////////
 
@@ -43,43 +43,37 @@ public:
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Owner")
 	class AMotionControllerPawn* OwnerPawn;
-	//-------------- Object Variables --------------//
+	////-------------- VR Object Variables --------------//
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	USceneComponent* Scene;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//USkeletalMeshComponent* HandMesh;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	class UMotionControllerComponent* MotionController;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//class UArrowComponent* ArcDirection;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	USkeletalMeshComponent* HandMesh;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	class UArrowComponent* ArcDirection;
-
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	class USplineComponent* ArcSpline;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//class USplineComponent* ArcSpline;
 
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
 	class USphereComponent* GrabSphere;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	UStaticMeshComponent* ArcEndPoint;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//UStaticMeshComponent* ArcEndPoint;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	UStaticMeshComponent* TeleportCylinder;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//UStaticMeshComponent* TeleportCylinder;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	UStaticMeshComponent* Ring;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//UStaticMeshComponent* Ring;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	UStaticMeshComponent* Arrow;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//UStaticMeshComponent* Arrow;
 
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
-	UStaticMeshComponent* RoomScaleMesh;
+	//UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+	//UStaticMeshComponent* RoomScaleMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
-	class USteamVRChaperoneComponent* SteamVRChaperone;
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+	//class USteamVRChaperoneComponent* SteamVRChaperone;
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")

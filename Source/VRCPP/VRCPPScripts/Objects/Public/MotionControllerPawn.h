@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "GameFramework/Character.h"
 #include "MotionControllerPawn.generated.h"
 
 UENUM(BlueprintType)		//"BlueprintType" is essential to include
@@ -15,7 +16,7 @@ enum class EHMDType : uint8
 };
 
 UCLASS()
-class VRCPP_API AMotionControllerPawn : public APawn
+class VRCPP_API AMotionControllerPawn : public ACharacter
 {
 	GENERATED_BODY()
 
@@ -52,21 +53,60 @@ public:
 
 	//-------------- Object Variables --------------//
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BasePawn")
-	class USceneComponent* VROrigin;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BasePawn")
+		class USceneComponent* VROrigin;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "BasePawn")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BasePawn")
+	class UStaticMeshComponent* VRBody;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BasePawn")
 	class UCameraComponent* Camera;
 
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Controller")
-	class AHandMotionController* LeftController;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
+	class UHandMotionController* LeftController;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Controller")
-	class AHandMotionController* RightController;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Controller")
+	class UHandMotionController* RightController;
 
 	UPROPERTY(EditAnywhere, Category = "Setup")
-	TSubclassOf<class AHandMotionController> ControllerBlueprint;
+	TSubclassOf<class UHandMotionController> ControllerBlueprint;
+	
+	//-------------- VR Object Variables --------------//
+/*
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		USkeletalMeshComponent* HandMesh;
+*/
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		class UArrowComponent* ArcDirection;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		class USplineComponent* ArcSpline;
+
+	/*UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		class USphereComponent* GrabSphere;
+*/
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		UStaticMeshComponent* ArcEndPoint;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		UStaticMeshComponent* TeleportCylinder;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		UStaticMeshComponent* Ring;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		UStaticMeshComponent* TeleportArrow;
+
+	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")
+		UStaticMeshComponent* RoomScaleMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+		class USteamVRChaperoneComponent* SteamVRChaperone;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Hand")
+		class UHapticFeedbackEffect_Base* HapticType;
 
 	//-------------- Fade Variables --------------//
 
@@ -149,7 +189,7 @@ public:
 	void ReleaseGrabRight();
 
 	UFUNCTION(BlueprintCallable, DisplayName = "Do Grab", Category = "VRCPP Interaction")
-	void DoGrab(float Val, AHandMotionController* HandController);
+	void DoGrab(float Val, UHandMotionController* HandController);
 
 	//-------------- Movement Input Functions --------------//
 
@@ -173,12 +213,12 @@ public:
 	void ReleaseTeleportRight();
 
 	UFUNCTION(BlueprintCallable, DisplayName = "Do Teleport", Category = "VRCPP Movement Input")
-	void DoTeleport(AHandMotionController* HandController);
+	void DoTeleport(UHandMotionController* HandController);
 
 	//-------------- Getter Functions --------------//
 
 	UFUNCTION(BlueprintCallable, DisplayName = "Do Teleport", Category = "VRCPP Getter")
-	FRotator GetRotationFromInput(float UpAxis, float RightAxis, AHandMotionController* HandController);
+	FRotator GetRotationFromInput(float UpAxis, float RightAxis, UHandMotionController* HandController);
 
 
 };
