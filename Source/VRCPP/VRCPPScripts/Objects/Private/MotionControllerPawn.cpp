@@ -2,6 +2,7 @@
 
 #include "VRCPP/VRCPPScripts/Objects/Public/MotionControllerPawn.h"
 #include "VRCPP/VRCPPScripts/Objects/Public/HandMotionController.h"
+#include "VRCPP/VRCPPScripts/Objects/Public/VRMovementComponent.h"
 
 #include "Public/MotionControllerComponent.h"
 #include "Camera/CameraComponent.h"
@@ -13,6 +14,7 @@
 #include "Components/SplineMeshComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "SteamVRChaperoneComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
@@ -30,17 +32,17 @@ AMotionControllerPawn::AMotionControllerPawn()
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	//VROrigin = CreateDefaultSubobject<USceneComponent>(FName("VROrigin"));
-	//VROrigin->AttachTo(RootComponent);
+	//VRBody = CreateDefaultSubobject<USceneComponent>(FName("VRBody"));
+	//VRBody->AttachTo(RootComponent);
 
-	//RootComponent = VROrigin;
-
-	VRBody = CreateDefaultSubobject<UStaticMeshComponent>(FName("VRBody"));
-	VRBody->SetupAttachment(RootComponent);
+	//RootComponent = VRBody;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
 	Camera->SetupAttachment(RootComponent);
 	Camera->bUsePawnControlRotation = false;
+
+	VRMovementComponent = CreateDefaultSubobject<UVRMovementComponent>(FName("VRMovementComponent"));
+
 
 	LeftController = CreateDefaultSubobject<UHandMotionController>(FName("LeftController"));
 	LeftController->SetTrackingSource(EControllerHand::Left);
@@ -169,7 +171,7 @@ void AMotionControllerPawn::PreBuiltBeginPlay()
 void AMotionControllerPawn::PreBuiltTick()
 {
 
-	if (LeftController->bIsTeleporterActive)
+	/*if (LeftController->bIsTeleporterActive)
 	{
 		LeftController->TeleportRotation = GetRotationFromInput(InputComponent->GetAxisValue(FName("MotionControllerThumbLeft_Y")),
 																InputComponent->GetAxisValue(FName("MotionControllerThumbLeft_X")),
@@ -180,7 +182,7 @@ void AMotionControllerPawn::PreBuiltTick()
 		RightController->TeleportRotation = GetRotationFromInput(InputComponent->GetAxisValue(FName("MotionControllerThumbRight_Y")),
 																 InputComponent->GetAxisValue(FName("MotionControllerThumbRight_X")),
 																 RightController);
-	}
+	}*/
 }
 
 void AMotionControllerPawn::DetectHeadset()
@@ -205,7 +207,7 @@ void AMotionControllerPawn::DetectHeadset()
 		break;
 	case EHMDType::HMDE_PSVR:
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
-		VROrigin->AddLocalOffset(FVector(0, 0, DefaultPlayerHeight));
+		GetCapsuleComponent()->AddLocalOffset(FVector(0, 0, DefaultPlayerHeight));
 		bUseControllerRotationRoll = true;
 		break;
 	}
@@ -227,14 +229,14 @@ void AMotionControllerPawn::SetupMotionControllers()
 	//LeftController = GetWorld()->SpawnActor<UHandMotionController>(ControllerBlueprint);
 	//LeftController->Hand = EControllerHand::Left;
 	//LeftController->SetTrackingSource(EControllerHand::Left);
-	//LeftController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("LeftController"));
+	//LeftController->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("LeftController"));
 	//LeftController->SetWorldScale3D(FVector(1, 1, -1));
 	//LeftController->OwnerPawn = this;
 
 	//RightController = GetWorld()->SpawnActor<UHandMotionController>(ControllerBlueprint);
 	//RightController->Hand = EControllerHand::Right;
 	//RightController->SetTrackingSource(EControllerHand::Right);
-	//RightController->AttachToComponent(VROrigin, FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("RightController"));
+	//RightController->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, FName("RightController"));
 	//
 	//RightController->OwnerPawn = this;
 
@@ -281,30 +283,30 @@ void AMotionControllerPawn::PressTeleportLeft()
 {
 	if (!bUsePreMadeInput) return;
 
-	LeftController->ActivateTeleporter();
-	RightController->DisableTeleporter();
+	//LeftController->ActivateTeleporter();
+	//RightController->DisableTeleporter();
 }
 
 void AMotionControllerPawn::PressTeleportRight()
 {
 	if (!bUsePreMadeInput) return;
 
-	RightController->ActivateTeleporter();
-	LeftController->DisableTeleporter();
+	//RightController->ActivateTeleporter();
+	//LeftController->DisableTeleporter();
 }
 
 void AMotionControllerPawn::ReleaseTeleportLeft()
 {
 	if (!bUsePreMadeInput) return;
 
-	if (LeftController->bIsTeleporterActive) DoTeleport(LeftController);
+	//if (LeftController->bIsTeleporterActive) DoTeleport(LeftController);
 }
 
 void AMotionControllerPawn::ReleaseTeleportRight()
 {
 	if (!bUsePreMadeInput) return;
 	
-	if (RightController->bIsTeleporterActive) DoTeleport(RightController);
+	//if (RightController->bIsTeleporterActive) DoTeleport(RightController);
 
 }
 
@@ -328,9 +330,9 @@ void AMotionControllerPawn::DoTeleport(UHandMotionController* HandController)
 {
 	if (bIsTeleporting) return;
 
-	if (HandController->bIsValidTeleportDestitination)
-	{
-		bIsTeleporting = true;
+	//if (HandController->bIsValidTeleportDestitination)
+	//{
+	//	bIsTeleporting = true;
 
 
 		//--(Use this code if you want camera fade (Have to use a timer [delay] which is not suggested)--//
@@ -357,23 +359,23 @@ void AMotionControllerPawn::DoTeleport(UHandMotionController* HandController)
 
 		//--(Use this code if you dont want fade or timer for more efficient code)--//
 
-		HandController->DisableTeleporter();
+		//HandController->DisableTeleporter();
 
 		FVector TPLocation;
 		FRotator TPRotation;
-		HandController->GetTeleportDestination(TPLocation, TPRotation);
+		//HandController->GetTeleportDestination(TPLocation, TPRotation);
 
-		SetActorLocation(TPLocation);
-		SetActorRotation(TPRotation);
+		//SetActorLocation(TPLocation);
+		//SetActorRotation(TPRotation);
 
 		//--------------------------------------------------------------------------------//
 
 		bIsTeleporting = false;
-	}
-	else
-	{
-		HandController->DisableTeleporter();
-	}
+	//}
+	//else
+	//{
+	//	HandController->DisableTeleporter();
+	//}
 }
 
 FRotator AMotionControllerPawn::GetRotationFromInput(float UpAxis, float RightAxis, UHandMotionController* HandController)

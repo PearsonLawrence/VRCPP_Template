@@ -76,8 +76,8 @@ void UHandMotionController::PreBuiltTick()
 
 	if (HandAnimBP) Cast<UHandAnimInstance>(HandAnimBP)->GripState = GripState;
 
-	UpdateGripState();
-	UpdateTeleportationArc();
+	//UpdateGripState();
+	//UpdateTeleportationArc();
 
 }
 
@@ -115,46 +115,6 @@ void UHandMotionController::UpdateGripState()
 
 }
 
-void UHandMotionController::UpdateTeleportationArc()
-{
-
-	//----------- Handle Teleportation Arc -----------//
-	ClearArc();
-
-	if (!bIsTeleporterActive) return;
-
-	bool OutSuccess;
-	TArray<FVector> OutPoints;
-	FVector OutNavMeshLocation = FVector::ZeroVector;
-	FVector OutTraceLocation;
-
-	TraceTeleportDestination(OutSuccess, OutPoints, OutNavMeshLocation, OutTraceLocation);
-
-	OwnerPawn->TeleportCylinder->SetVisibility(bIsValidTeleportDestitination, true);
-
-
-	FHitResult hit;
-
-	GetWorld()->LineTraceSingleByObjectType(hit, OutNavMeshLocation + FVector(0, 0, -200), OutNavMeshLocation, FCollisionObjectQueryParams::AllStaticObjects);
-
-	FVector Result = UKismetMathLibrary::SelectVector(hit.ImpactPoint, OutNavMeshLocation, hit.bBlockingHit);
-
-	OwnerPawn->TeleportCylinder->SetWorldLocation(Result);
-
-
-
-	if (((bIsValidTeleportDestitination && !bLastFrameValidDestination) || (!bIsValidTeleportDestitination && bLastFrameValidDestination)) && HapticType)
-		RumbleController(HapticType, .3);
-
-	bLastFrameValidDestination = OutSuccess;
-	bIsValidTeleportDestitination = bLastFrameValidDestination;
-	UpdateArcSpline(OutSuccess, OutPoints);
-	UpdateArcEndpoint(OutTraceLocation, OutSuccess);
-
-	/////////////////////////////////////////////////////
-
-}
-
 
 AActor* UHandMotionController::GetActorNearHand()
 {
@@ -166,10 +126,10 @@ AActor* UHandMotionController::GetActorNearHand()
 	FCollisionShape sphere;
 	sphere.SetSphere(20);
 	GetWorld()->SweepMultiByChannel(Results, GetComponentLocation(), GetComponentLocation(), FQuat::Identity, ECollisionChannel::ECC_EngineTraceChannel1, sphere);
-
+	
 	//OwnerPawn->GrabSphere->GetOverlappingActors(OverlappingActors);
 
-	for(int i = 0; i < Results.Num(); i++)
+	for(int32 i = 0; i < Results.Num(); i++)
 	{
 		bool bDoesUseGrab = UKismetSystemLibrary::DoesImplementInterface(Results[i].GetActor(), UPickupActorInterface::StaticClass());
 		
@@ -219,141 +179,6 @@ void UHandMotionController::GrabActor()
 	{
 		ReleaseActor();
 	}
-}
-
-void UHandMotionController::ActivateTeleporter()
-{
-	bIsTeleporterActive = true;
-	OwnerPawn->TeleportCylinder->SetVisibility(true, true);
-
-	OwnerPawn->RoomScaleMesh->SetVisibility(bIsRoomScale);
-
-	InitialControllerRotation = GetComponentRotation();
-	
-}
-
-
-void UHandMotionController::DisableTeleporter()
-{
-	if (!bIsTeleporterActive) return;
-
-	bIsTeleporterActive = false;
-
-	OwnerPawn->TeleportCylinder->SetVisibility(false, true);
-	OwnerPawn->ArcEndPoint->SetVisibility(false);
-	OwnerPawn->RoomScaleMesh->SetVisibility(false);
-
-}
-
-//TODO: make sure function works
-void UHandMotionController::TraceTeleportDestination(bool& OutSuccess, TArray<FVector>& OutTracePoints, FVector& OutNavMeshLocation, FVector& OutTraceLocation)
-{
-	TArray<FVector> TempTracePoints;
-	FVector ArcStartPos = OwnerPawn->ArcDirection->GetComponentLocation();
-	FVector ArcLaunchVelocity = OwnerPawn->ArcDirection->GetForwardVector();
-
-	ArcLaunchVelocity *= TeleportLaunchVelocity;
-
-	// Predict Projectile Path
-
-	FPredictProjectilePathParams PredictParams(0.0f, ArcStartPos, ArcLaunchVelocity * TeleportLaunchVelocity, 4.0f, UEngineTypes::ConvertToObjectType(ECC_WorldStatic));
-	FPredictProjectilePathResult PredictResult;
-	const bool DidPredictPath = UGameplayStatics::PredictProjectilePath(GetWorld(), PredictParams, PredictResult);
-
-	FVector ProjectedTraceHitLocation = PredictResult.HitResult.Location;
-
-	TempTracePoints.Empty();
-	for (FPredictProjectilePathPointData Point : PredictResult.PathData)
-	TempTracePoints.Push(Point.Location);
-
-	OutTracePoints = TempTracePoints;
-	OutTraceLocation = ProjectedTraceHitLocation;
-
-	float ProjectNavExtends = 500;
-	UNavigationSystem* NavigationArea = FNavigationSystem::GetCurrent<UNavigationSystem>(GetWorld());
-
-	UNavigationSystemV1* NavigationSystem = Cast<UNavigationSystemV1>(GetWorld()->GetNavigationSystem());
-
-    FVector ProjectedLocation = NavigationSystem->ProjectPointToNavigation(GetWorld(), ProjectedTraceHitLocation, (ANavigationData *)0, 0, FVector(ProjectNavExtends));
-
-	FNavLocation NavLoc;
-	FVector QueryingExtent = FVector(50.0f, 50.0f, 250.0f);
-	FNavAgentProperties NavAgentProps;
-
-	bool bProjectedLocationValid = NavigationSystem->ProjectPointToNavigation(GetComponentLocation(), NavLoc, QueryingExtent, (ANavigationData*)0, 0);
-
-	OutSuccess = (PredictResult.HitResult.bBlockingHit && bProjectedLocationValid) ? true : false;
-	OutNavMeshLocation = ProjectedLocation;
-}
-
-void UHandMotionController::ClearArc()
-{
-	for (int i = 0; i < SplineMeshes.Num(); i++)
-	{
-		SplineMeshes[i]->DestroyComponent();
-		SplineMeshes.RemoveAt(i);
-	}
-
-	OwnerPawn->ArcSpline->ClearSplinePoints();
-}
-
-void UHandMotionController::UpdateArcSpline(bool FoundValidLocation, TArray<FVector> SplinePoints)
-{
-	if (!FoundValidLocation)
-	{
-
-		TArray<FVector> nullarray;
-		SplinePoints = nullarray;
-
-		SplinePoints.Add(OwnerPawn->ArcDirection->GetComponentLocation());
-		SplinePoints.Add(OwnerPawn->ArcDirection->GetComponentLocation() + (OwnerPawn->ArcDirection->GetForwardVector() * 20.0f));
-	}
-
-	for (int i = 0; i < SplinePoints.Num(); i++)
-	{
-		OwnerPawn->ArcSpline->AddSplinePoint(SplinePoints[i], ESplineCoordinateSpace::Local);
-	}
-	OwnerPawn->ArcSpline->SetSplinePointType(SplinePoints.Num() - 1, ESplinePointType::CurveClamped);
-
-	for (int i = 0; i < OwnerPawn->ArcSpline->GetNumberOfSplinePoints() - 2; i++)
-	{
-		USplineMeshComponent* tempMesh = CreateDefaultSubobject<USplineMeshComponent>("Mesh");
-
-		SplineMeshes.Add(tempMesh);
-		SplineMeshes[SplineMeshes.Num() - 1]->SetStartAndEnd(SplinePoints[i], OwnerPawn->ArcSpline->GetTangentAtSplinePoint(i, ESplineCoordinateSpace::Local),
-			SplinePoints[i + 1], OwnerPawn->ArcSpline->GetTangentAtSplinePoint(i + 1, ESplineCoordinateSpace::Local));
-	}
-}
-
-void UHandMotionController::UpdateArcEndpoint(FVector NewLocation, bool ValidLocationFound)
-{
-	OwnerPawn->ArcEndPoint->SetVisibility(ValidLocationFound && bIsTeleporterActive);
-	OwnerPawn->ArcEndPoint->SetWorldLocation(NewLocation);
-
-	FRotator TempRot;
-	FVector TempPosition;
-
-	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(TempRot, TempPosition);
-
-	OwnerPawn->TeleportArrow->SetWorldRotation(FRotator(0, 0, TeleportRotation.Yaw + TempRot.Yaw));
-	OwnerPawn->RoomScaleMesh->SetWorldRotation(TeleportRotation);
-
-}
-
-void UHandMotionController::GetTeleportDestination(FVector& OutLocation, FRotator& OutRotation)
-{
-	FRotator TempRot;
-	FVector TempPosition;
-
-	UHeadMountedDisplayFunctionLibrary::GetOrientationAndPosition(TempRot, TempPosition);
-
-	TempPosition.Z = 0.0f;
-
-	FVector Result = TeleportRotation.RotateVector(TempPosition);
-
-	OutLocation = OwnerPawn->TeleportCylinder->GetComponentLocation() - Result;
-
-	OutRotation = TeleportRotation;
 }
 
 void UHandMotionController::SetupRoomScaleOutline()

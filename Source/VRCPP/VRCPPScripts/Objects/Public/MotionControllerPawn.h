@@ -53,11 +53,6 @@ public:
 
 	//-------------- Object Variables --------------//
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BasePawn")
-		class USceneComponent* VROrigin;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BasePawn")
-	class UStaticMeshComponent* VRBody;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BasePawn")
 	class UCameraComponent* Camera;
@@ -72,6 +67,11 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Setup")
 	TSubclassOf<class UHandMotionController> ControllerBlueprint;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "BasePawn")
+	class UVRMovementComponent* VRMovementComponent;
+
+
+
 	//-------------- VR Object Variables --------------//
 /*
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Hand")

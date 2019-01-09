@@ -41,6 +41,9 @@ public:
 	bool bPreMadeBeginPlay;
 
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
+	bool bIsRoomScale;
+
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadWrite, Category = "Owner")
 	class AMotionControllerPawn* OwnerPawn;
 	////-------------- VR Object Variables --------------//
@@ -99,32 +102,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Owner")
 	AActor* AttachedActor;
 
-	//-------------- Teleport Variables --------------//
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	TArray<class USplineMeshComponent*> SplineMeshes;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	bool bIsRoomScale;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	bool bIsTeleporterActive;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	bool bIsValidTeleportDestitination;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	bool bLastFrameValidDestination;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	FVector TeleportDestination;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	FRotator TeleportRotation;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Teleport")
-	float TeleportLaunchVelocity;
-
 
 	///////////////////// Functions //////////////////////
 
@@ -152,33 +129,6 @@ public:
 	/**  Pre-built function meant to Update VR GripState through C++*/
 	UFUNCTION(BlueprintCallable, DisplayName = "Update Grip State", Category = "VRCPP Grabbing")
 	void UpdateGripState();
-
-	//-------------- Teleportation Functions --------------//
-
-	UFUNCTION(BlueprintCallable, DisplayName = "ActivateTeleporter", Category = "VRCPP Teleportation")
-	void ActivateTeleporter();
-
-	UFUNCTION(BlueprintCallable, DisplayName = "DisableTeleporter", Category = "VRCPP Teleportation")
-	void DisableTeleporter();
-
-	UFUNCTION(BlueprintCallable, DisplayName = "TraceTeleportDestination", Category = "VRCPP Teleportation")
-	void TraceTeleportDestination(bool& OutSuccess, TArray<FVector>& OutTracePoints, FVector& OutNavMeshLocation, FVector& OutTraceLocation);
-
-	UFUNCTION(BlueprintCallable, DisplayName = "ClearArc", Category = "VRCPP Teleportation")
-	void ClearArc();
-
-	UFUNCTION(BlueprintCallable, DisplayName = "UpdateArcSpline", Category = "VRCPP Teleportation")
-	void UpdateArcSpline(bool FoundValidLocation, TArray<FVector> SplinePoints);
-
-	UFUNCTION(BlueprintCallable, DisplayName = "UpdateArcEndpoint", Category = "VRCPP Teleportation")
-	void UpdateArcEndpoint(FVector NewLocation, bool ValidLocationFound);
-
-	UFUNCTION(BlueprintCallable, DisplayName = "GetTeleportDestination", Category = "VRCPP Teleportation")
-	void GetTeleportDestination(FVector& OutLocation, FRotator& OutRotation);
-
-	/**  Pre-built function meant to Update Teleportation through C++*/
-	UFUNCTION(BlueprintCallable, DisplayName = "Update Teleportation Arc", Category = "VRCPP Teleportation")
-	void UpdateTeleportationArc();
 
 	//-------------- Room-Scale Functions --------------//
 
