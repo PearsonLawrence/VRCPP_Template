@@ -12,6 +12,7 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/Character.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Public/DrawDebugHelpers.h"
@@ -24,23 +25,28 @@ UVRMovementComponent::UVRMovementComponent()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
+	
 	// ...
 }
 
 
 
-void UVRMovementComponent::ActivateTeleporterForActor(AActor* Owner, UStaticMeshComponent* TeleportCylinder, UStaticMeshComponent* RoomScaleMesh)
+void UVRMovementComponent::SetMovementDefaults(float NewMaxStepHeight, float NewWalkableFloorAngle, float NewGroundFriction, float NewMaxWalkSpeed, float NewBreakingSpeed)
+{
+	MaxStepHeight = NewMaxStepHeight;
+	SetWalkableFloorAngle(NewWalkableFloorAngle);
+	GroundFriction = NewGroundFriction;
+	MaxWalkSpeed = NewMaxWalkSpeed;
+	BrakingDecelerationWalking = NewBreakingSpeed;
+}
+
+void UVRMovementComponent::ActivateTeleporterForActor(AActor* Owner,  UStaticMeshComponent* RoomScaleMesh)
 {
 
 	if (!Owner) return;
 
 	bIsTeleporterActive = true;
 
-	if (TeleportCylinder)
-	{
-		TeleportCylinder->SetVisibility(true, true);
-	}
 	if (RoomScaleMesh)
 	{
 		RoomScaleMesh->SetVisibility(true, true);
@@ -48,24 +54,6 @@ void UVRMovementComponent::ActivateTeleporterForActor(AActor* Owner, UStaticMesh
 
 }
 
-
-void UVRMovementComponent::ActivateTeleporterForHand(UChildActorComponent* Owner, UStaticMeshComponent* TeleportCylinder, UStaticMeshComponent* RoomScaleMesh)
-{
-
-	if (!Owner) return;
-
-	bIsTeleporterActive = true;
-
-	if (TeleportCylinder)
-	{
-		TeleportCylinder->SetVisibility(true, true);
-	}
-	if (RoomScaleMesh)
-	{
-		RoomScaleMesh->SetVisibility(true, true);
-	}
-
-}
 
 void UVRMovementComponent::DisableTeleporter(AActor* ActorToTeleport, FVector NewTeleportLocation, FRotator NewTeleportRotation, float TeleportationHeightOffset, bool bAutoActivateTeleport, UStaticMeshComponent* TeleportCylinder, UStaticMeshComponent* RoomScaleMesh)
 {
@@ -97,6 +85,20 @@ void UVRMovementComponent::DisableTeleporter(AActor* ActorToTeleport, FVector Ne
 	
 }
 
+void UVRMovementComponent::UpdateTeleportationMeshes(FVector NewMeshLocation, FRotator NewMeshRotation, bool bVisibility, UStaticMeshComponent* TeleportCylinder, UStaticMeshComponent* RoomScaleMesh)
+{
+	if (TeleportCylinder)
+	{
+		TeleportCylinder->SetVisibility(bVisibility, bVisibility);
+		TeleportCylinder->SetWorldLocation(NewMeshLocation);
+		TeleportCylinder->SetWorldRotation(NewMeshRotation);
+	}
+
+	if (RoomScaleMesh)
+	{
+		RoomScaleMesh->SetVisibility(bVisibility, bVisibility);
+	}
+}
 
 void UVRMovementComponent::TraceTeleportDestination(FVector Start, FVector Direction, ECollisionChannel TraceChannel, bool& OutSuccess, FVector& OutNavMeshLocation, FVector& OutTraceLocation, float TeleportTraceDistance, bool bDrawLineTrace, float LineThickness, FColor TraceColor, bool bChangeLineTraceColorOnHit, FColor TraceHitColor)
 {
@@ -145,5 +147,24 @@ void UVRMovementComponent::ExecuteTeleport(AActor* ActorToTeleport, FVector NewL
 
 	ActorToTeleport->SetActorLocation(LocationPlusOffset);
 	ActorToTeleport->SetActorRotation(NewRotation);
+
+}
+
+void UVRMovementComponent::CharacterBaseMovement(ACharacter * Character, FVector ForwardOrientation, FVector RightOrientation, float XAxisValue, float YAxisValue, float Speed, bool bForce)
+{
+	if (!Character)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Character is NULL"));
+		return;
+	}
+
+	FVector FlatForwardVector = FVector(ForwardOrientation.X, ForwardOrientation.Y, 0) * YAxisValue;
+
+	FVector FlatRightVector = FVector(RightOrientation.X, RightOrientation.Y, 0) * XAxisValue;
+
+	FVector Dir = (FlatForwardVector + FlatRightVector).GetSafeNormal();
+
+	//AddInputVector(Dir * Speed, bForce);
+	Character->AddMovementInput(Dir, 1.0f, bForce);
 
 }

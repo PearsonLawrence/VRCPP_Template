@@ -27,7 +27,8 @@
 #include "Camera/PlayerCameraManager.h"
 #include "Classes/InputCoreTypes.h"
 // Sets default values
-AMotionControllerPawn::AMotionControllerPawn()
+AMotionControllerPawn::AMotionControllerPawn(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer.SetDefaultSubobjectClass<UVRMovementComponent>(ACharacter::CharacterMovementComponentName))
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -36,12 +37,12 @@ AMotionControllerPawn::AMotionControllerPawn()
 	//VRBody->AttachTo(RootComponent);
 
 	//RootComponent = VRBody;
+	UCharacterMovementComponent* CharacterMovement = GetCharacterMovement();
+	VRMovementComponent = CastChecked<UVRMovementComponent>(CharacterMovement);
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(FName("Camera"));
 	Camera->SetupAttachment(RootComponent);
 	Camera->bUsePawnControlRotation = false;
-
-	VRMovementComponent = CreateDefaultSubobject<UVRMovementComponent>(FName("VRMovementComponent"));
 
 
 	LeftController = CreateDefaultSubobject<UHandMotionController>(FName("LeftController"));
@@ -110,10 +111,24 @@ AMotionControllerPawn::AMotionControllerPawn()
 
 }
 
+void AMotionControllerPawn::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	//Have to get and cast in begin play because it returns NULL in constructor//
+	UCharacterMovementComponent* CharacterMovement = GetCharacterMovement();
+	VRMovementComponent = CastChecked<UVRMovementComponent>(CharacterMovement);
+	//-------------------------------------------------------------------------//
+}
+
 // Called when the game starts or when spawned
 void AMotionControllerPawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//Have to get and cast in begin play because it returns NULL in constructor//
+	//UCharacterMovementComponent* CharacterMovement = GetCharacterMovement();
+	//VRMovementComponent = CastChecked<UVRMovementComponent>(CharacterMovement);
+	//-------------------------------------------------------------------------//
 
 	if (!bPreMadeBeginPlay) return;
 

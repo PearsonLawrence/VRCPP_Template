@@ -23,7 +23,9 @@ class VRCPP_API AMotionControllerPawn : public ACharacter
 public:
 
 	// Sets default values for this pawn's properties
-	AMotionControllerPawn();
+	AMotionControllerPawn(const FObjectInitializer& ObjectInitializer);
+
+	virtual void PostInitializeComponents() override;
 
 protected:
 

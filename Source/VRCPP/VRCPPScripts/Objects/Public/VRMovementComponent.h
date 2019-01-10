@@ -43,17 +43,26 @@ public:
 
 	//-------------- Base Functions --------------//
 
+
+
+	//-------------- SetDefaults Functions --------------//
+
+
+	UFUNCTION(BlueprintCallable, DisplayName = "SetMovementDefaults", Category = "VRCPP Smooth Movement")
+		void SetMovementDefaults(float NewMaxStepHeight, float NewWalkableFloorAngle, float NewGroundFriction, float NewMaxWalkSpeed, float NewBreakingSpeed);
+
+
 	//-------------- Teleportation Functions --------------//
 
 	UFUNCTION(BlueprintCallable, DisplayName = "ActivateTeleporter", Category = "VRCPP Teleportation")
-		void ActivateTeleporterForActor(AActor* Owner, UStaticMeshComponent* TeleportCylinder = nullptr, UStaticMeshComponent* RoomScaleMesh = nullptr);
-
-	UFUNCTION(BlueprintCallable, DisplayName = "ActivateTeleporter", Category = "VRCPP Teleportation")
-		void ActivateTeleporterForHand(UChildActorComponent* Owner, UStaticMeshComponent* TeleportCylinder = nullptr, UStaticMeshComponent* RoomScaleMesh = nullptr);
+		void ActivateTeleporterForActor(AActor* Owner, UStaticMeshComponent* RoomScaleMesh = nullptr);
 
 	UFUNCTION(BlueprintCallable, DisplayName = "DisableTeleporter", Category = "VRCPP Teleportation")
 		void DisableTeleporter(AActor* ActorToTeleport, FVector NewTeleportLocation, FRotator NewTeleportRotation, 
 			                   float TeleportationHeightOffset, bool bAutoActivateTeleport = true, UStaticMeshComponent* TeleportCylinder = nullptr, UStaticMeshComponent* RoomScaleMesh = nullptr);
+
+	UFUNCTION(BlueprintCallable, DisplayName = "UpdateTeleportationMeshes", Category = "VRCPP Teleportation")
+		void UpdateTeleportationMeshes(FVector NewMeshLocation, FRotator NewMeshRotation, bool bVisibility, UStaticMeshComponent* TeleportCylinder = nullptr, UStaticMeshComponent* RoomScaleMesh = nullptr);
 
 	UFUNCTION(BlueprintCallable, DisplayName = "TraceTeleportDestination", Category = "VRCPP Teleportation")
 		void TraceTeleportDestination(FVector Start, FVector Direction, ECollisionChannel TraceChannel,  bool& OutSuccess, 
@@ -61,8 +70,14 @@ public:
 									  float TeleportTraceDistance = 500.0f, bool bDrawLineTrace = false, float LineThickness = 1, 
 									  FColor TraceColor = FColor::Red, bool bChangeLineTraceColorOnHit = false, FColor TraceHitColor = FColor::Green);
 
-	UFUNCTION(BlueprintCallable, DisplayName = "GetTeleportDestination", Category = "VRCPP Teleportation")
+	UFUNCTION(BlueprintCallable, DisplayName = "ExecuteTeleport", Category = "VRCPP Teleportation")
 		void ExecuteTeleport(AActor* ActorToTeleport, FVector NewLocation, FRotator NewRotation, float ZOffset = 0);
 
-	
+
+	//-------------- Smooth Movement Functions --------------//
+
+
+	UFUNCTION(BlueprintCallable, DisplayName = "CharacterBaseMovement", Category = "VRCPP Smooth Movement")
+		void CharacterBaseMovement(ACharacter* Character, FVector ForwardOrientation, FVector RightOrientation, float XAxisValue, float YAxisValue, float Speed, bool bForce);
+
 };
